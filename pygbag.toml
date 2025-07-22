@@ -1,0 +1,6 @@
+[project]
+name = "PokemonTCG"
+source = "main.py"
+
+[tool.pygbag]
+preload = ["assets", "src"]
