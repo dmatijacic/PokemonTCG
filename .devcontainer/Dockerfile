@@ -10,9 +10,7 @@ RUN apt-get -y update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/
 RUN pip install --upgrade pip
 
 # Install Python packages
-RUN pip install --no-cache-dir pygame pygbag requests
-
-
+RUN pip install --no-cache-dir pygame pygbag requests pydantic==2.11.7 pydantic-core==2.33.2
 
 # Set working directory
 WORKDIR /workspace
