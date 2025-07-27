@@ -1,174 +1,240 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pokémon TCG</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            font-family: "Inter", sans-serif;
-            background-image: url("assets/playmat.png");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            min-height: 100vh;
-            overflow: hidden;
-        }
-        .card {
-            width: 90px;
-            height: auto;
-            border-radius: 6px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            cursor: grab;
-        }
-        .card:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
-        }
-        .card.dragging {
-            opacity: 0.5;
-            transform: scale(1.1);
-        }
-        .zone {
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            min-height: 145px;
-            transition: background-color 0.2s ease;
-        }
-        .zone.drag-over {
-            background-color: rgba(0, 255, 0, 0.2);
-            border-color: rgba(134, 239, 172, 0.8);
-        }
-        .hand-card-container {
-            transition: transform 0.3s ease;
-        }
-        .player-hand .hand-card-container:hover {
-            transform: translateY(-20px);
-        }
-        .deck-pile {
-            position: relative;
-        }
-        .deck-count {
-            position: absolute;
-            bottom: -8px;
-            right: -8px;
-            background-color: rgba(0,0,0,0.7);
-            color: white;
-            font-weight: bold;
-            font-size: 0.75rem;
-            padding: 2px 6px;
-            border-radius: 9999px;
-            border: 1px solid white;
-        }
-        #notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 0.5s, transform 0.5s;
-            pointer-events: none;
-        }
-        #notification.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(10px);
-        }
-        #player-discard-pile.drag-over {
-            background-color: rgba(239, 68, 68, 0.2);
-            border-color: rgba(248, 113, 113, 0.8);
-        }
+      body {
+        font-family: "Inter", sans-serif;
+        background-image: url("assets/playmat.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+      .card {
+        width: 90px;
+        height: auto;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        cursor: grab;
+      }
+      .card:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+      }
+      .card.dragging {
+        opacity: 0.5;
+        transform: scale(1.1);
+      }
+      .zone {
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 12px;
+        min-height: 145px;
+        transition: background-color 0.2s ease;
+      }
+      .zone.drag-over {
+        background-color: rgba(0, 255, 0, 0.2);
+        border-color: rgba(134, 239, 172, 0.8);
+      }
+      .hand-card-container {
+        transition: transform 0.3s ease;
+      }
+      .player-hand .hand-card-container:hover {
+        transform: translateY(-20px);
+      }
+      .deck-pile {
+        position: relative;
+      }
+      .deck-count {
+        position: absolute;
+        bottom: -8px;
+        right: -8px;
+        background-color: rgba(0, 0, 0, 0.7);
+        color: white;
+        font-weight: bold;
+        font-size: 0.75rem;
+        padding: 2px 6px;
+        border-radius: 9999px;
+        border: 1px solid white;
+      }
+      #notification {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.5s, transform 0.5s;
+        pointer-events: none;
+      }
+      #notification.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(10px);
+      }
+      #player-discard-pile.drag-over {
+        background-color: rgba(239, 68, 68, 0.2);
+        border-color: rgba(248, 113, 113, 0.8);
+      }
     </style>
-</head>
+  </head>
 
-<body class="bg-gray-900 text-white flex flex-col items-center justify-center p-2">
+  <body
+    class="bg-gray-900 text-white flex flex-col items-center justify-center p-2"
+  >
     <div id="notification"></div>
     <div id="game-board" class="w-full max-w-7xl h-screen flex flex-col">
-        
-        <div class="flex-1 flex flex-col min-h-0">
-            <div id="opponent-hand" class="h-[100px] flex justify-center items-start pt-2 space-x-[-65px] mb-2"></div>
-            <div id="opponent-battle-zone" class="zone flex-1 flex justify-center items-center p-2 m-2 space-x-4"></div>
-        </div>
+      <div class="flex-1 flex flex-col min-h-0">
+        <div
+          id="opponent-hand"
+          class="h-[100px] flex justify-center items-start pt-2 space-x-[-65px] mb-2"
+        ></div>
+        <div
+          id="opponent-battle-zone"
+          class="zone flex-1 flex justify-center items-center p-2 m-2 space-x-4"
+        ></div>
+      </div>
 
-        <div class="flex justify-between items-center h-[150px] px-4">
-            <div class="flex items-center space-x-3">
-                <div class="deck-pile text-center">
-                    <img src="assets/cards/pokemon_card_game.png" class="card" alt="Opponent Deck">
-                    <span id="opponent-deck-count" class="deck-count">0</span>
-                    <div class="text-xs mt-1">Deck</div>
-                </div>
-                <div class="deck-pile text-center">
-                    <div id="opponent-discard-pile" class="w-[90px] h-[125px] bg-black/30 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center">
-                       <span class="text-xs text-white/50">Discard</span>
-                    </div>
-                    <span id="opponent-discard-count" class="deck-count">0</span>
-                    <div class="text-xs mt-1">Discard</div>
-                </div>
+      <div class="flex justify-between items-center h-[150px] px-4">
+        <div class="flex items-center space-x-3">
+          <div class="deck-pile text-center">
+            <img
+              src="assets/cards/card_back.png"
+              class="card"
+              alt="Opponent Deck"
+            />
+            <span id="opponent-deck-count" class="deck-count">0</span>
+            <div class="text-xs mt-1">Deck</div>
+          </div>
+          <div class="deck-pile text-center">
+            <div
+              id="opponent-discard-pile"
+              class="w-[90px] h-[125px] bg-black/30 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center"
+            >
+              <span class="text-xs text-white/50">Discard</span>
             </div>
-            <div class="text-center">
-                <h2 id="turn-indicator" class="text-2xl font-bold">Player's Turn</h2>
-                <button id="end-turn-btn" class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition">End Turn</button>
-            </div>
-            <div class="flex items-center space-x-3">
-                 <div class="deck-pile text-center">
-                    <div id="player-discard-pile" class="w-[90px] h-[125px] bg-black/30 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center">
-                        <span class="text-xs text-white/50">Discard</span>
-                    </div>
-                    <span id="player-discard-count" class="deck-count">0</span>
-                     <div class="text-xs mt-1">Discard</div>
-                </div>
-                <div class="deck-pile text-center">
-                    <img src="assets/cards/pokemon_card_game.png" id="player-deck" class="card cursor-pointer" alt="Player Deck" />
-                    <span id="player-deck-count" class="deck-count">0</span>
-                    <div class="text-xs mt-1">Deck</div>
-                </div>
-            </div>
+            <span id="opponent-discard-count" class="deck-count">0</span>
+            <div class="text-xs mt-1">Discard</div>
+          </div>
         </div>
+        <div class="text-center">
+          <h2 id="turn-indicator" class="text-2xl font-bold">Player's Turn</h2>
+          <button
+            id="end-turn-btn"
+            class="mt-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg transition"
+          >
+            End Turn
+          </button>
+        </div>
+        <div class="flex items-center space-x-3">
+          <div class="deck-pile text-center">
+            <div
+              id="player-discard-pile"
+              class="w-[90px] h-[125px] bg-black/30 rounded-md border-2 border-dashed border-white/20 flex items-center justify-center"
+            >
+              <span class="text-xs text-white/50">Discard</span>
+            </div>
+            <span id="player-discard-count" class="deck-count">0</span>
+            <div class="text-xs mt-1">Discard</div>
+          </div>
+          <div class="deck-pile text-center">
+            <img
+              src="assets/cards/card_back.png"
+              id="player-deck"
+              class="card cursor-pointer"
+              alt="Player Deck"
+            />
+            <span id="player-deck-count" class="deck-count">0</span>
+            <div class="text-xs mt-1">Deck</div>
+          </div>
+        </div>
+      </div>
 
-        <div class="flex-1 flex flex-col-reverse min-h-0">
-            <div id="player-hand" class="h-[140px] flex justify-center items-end pb-2 space-x-[-65px] player-hand"></div>
-            <div id="player-battle-zone" class="zone flex-1 flex justify-center items-center p-2 m-2 space-x-4"></div>
-        </div>
+      <div class="flex-1 flex flex-col-reverse min-h-0">
+        <div
+          id="player-hand"
+          class="h-[140px] flex justify-center items-end pb-2 space-x-[-65px] player-hand"
+        ></div>
+        <div
+          id="player-battle-zone"
+          class="zone flex-1 flex justify-center items-center p-2 m-2 space-x-4"
+        ></div>
+      </div>
     </div>
 
     <script src="/lib/mcp-sdk.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-        
+      document.addEventListener("DOMContentLoaded", () => {
         const { Client, StreamableHTTPClientTransport } = mcp;
         let mcpClient;
 
         async function connectToServer() {
           const serverUrl = new URL("http://127.0.0.1:8000/mcp/");
           try {
-            mcpClient = new Client({ name: "pokemon-tcg-client", version: "1.0.0" });
+            mcpClient = new Client({
+              name: "pokemon-tcg-client",
+              version: "1.0.0",
+            });
             const transport = new StreamableHTTPClientTransport(serverUrl);
             await mcpClient.connect(transport);
             console.info("Successfully connected to MCP server!");
             initializeGame();
           } catch (error) {
             console.error("Failed to connect to MCP server:", error);
-            document.getElementById("turn-indicator").textContent = "Connection Failed";
+            document.getElementById("turn-indicator").textContent =
+              "Connection Failed";
           }
         }
 
-        const gameState = { turn_player: "player", turn_count: 1, player_hand: [], opponent_hand: [], player_battle_zone: [], opponent_battle_zone: [], player_deck: [], opponent_deck: [], player_discard: [], opponent_discard: [] };
+        const gameState = {
+          turn_player: "player",
+          turn_count: 0,
+          actions_taken_this_turn: 0,
+          player_hand: [],
+          opponent_hand: [],
+          player_battle_zone: [],
+          opponent_battle_zone: [],
+          player_deck: [],
+          opponent_deck: [],
+          player_discard: [],
+          opponent_discard: [],
+        };
 
         async function validateMoveWithServer(action) {
-          if (!mcpClient) { console.error("MCP Client not connected."); return "INVALID: Not connected to server."; }
-          const statePayload = { turn_player: gameState.turn_player, player_hand: gameState.player_hand.map((c) => c.name), opponent_hand: gameState.opponent_hand.map((c) => c.name), player_battle_zone: gameState.player_battle_zone.map((c) => c.name), opponent_battle_zone: gameState.opponent_battle_zone.map((c) => c.name), turn_count: gameState.turn_count };
-          const toolInput = { game_state: statePayload, proposed_action: action };
+          if (!mcpClient) {
+            console.error("MCP Client not connected.");
+            return "INVALID: Not connected to server.";
+          }
+          const statePayload = {
+            turn_player: gameState.turn_player,
+            player_hand: gameState.player_hand.map((c) => c.name),
+            opponent_hand: gameState.opponent_hand.map((c) => c.name),
+            player_battle_zone: gameState.player_battle_zone.map((c) => c.name),
+            opponent_battle_zone: gameState.opponent_battle_zone.map(
+              (c) => c.name
+            ),
+            turn_count: gameState.turn_count,
+            actions_taken_this_turn: gameState.actions_taken_this_turn++,
+          };
+          const toolInput = {
+            game_state: statePayload,
+            proposed_action: action,
+          };
           try {
             const result = await mcpClient.tools.judge.validate_move(toolInput);
             return result;
@@ -179,20 +245,25 @@
         }
 
         function showNotification(message, isSuccess) {
-            const notification = document.getElementById('notification');
-            notification.textContent = message;
-            notification.style.backgroundColor = isSuccess ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)';
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 2000);
+          const notification = document.getElementById("notification");
+          notification.textContent = message;
+          notification.style.backgroundColor = isSuccess
+            ? "rgba(34, 197, 94, 0.8)"
+            : "rgba(239, 68, 68, 0.8)";
+          notification.classList.add("show");
+          setTimeout(() => {
+            notification.classList.remove("show");
+          }, 2000);
         }
 
         function renderCard(card, isOpponentHand = false) {
           const cardContainer = document.createElement("div");
           cardContainer.className = "hand-card-container";
           const img = document.createElement("img");
-          img.src = isOpponentHand ? "assets/cards/pokemon_card_game.png" : `assets/cards/${card.name}.png`;
+          console.debug("Rendering card:", card);
+          img.src = isOpponentHand
+            ? "assets/cards/card_back.png"
+            : `assets/cards/images/${card.id}.png`;
           img.alt = card.name;
           img.className = "card";
           img.dataset.cardName = card.name;
@@ -200,43 +271,194 @@
           cardContainer.appendChild(img);
           return cardContainer;
         }
-        function renderPlayerHand() { const handEl = document.getElementById("player-hand"); handEl.innerHTML = ""; gameState.player_hand.forEach((card) => handEl.appendChild(renderCard(card))); }
-        function renderOpponentHand() { const handEl = document.getElementById("opponent-hand"); handEl.innerHTML = ""; gameState.opponent_hand.forEach((card) => handEl.appendChild(renderCard(card, true))); }
-        function renderBattleZone(zoneId, cards) { const zoneEl = document.getElementById(zoneId); zoneEl.innerHTML = ""; cards.forEach((card) => zoneEl.appendChild(renderCard(card).children[0])); }
-        function renderDiscardPiles() {
-            const playerDiscardEl = document.getElementById('player-discard-pile');
-            const opponentDiscardEl = document.getElementById('opponent-discard-pile');
-            playerDiscardEl.innerHTML = '';
-            opponentDiscardEl.innerHTML = '';
-            if (gameState.player_discard.length > 0) { const topCard = gameState.player_discard[gameState.player_discard.length - 1]; const cardImg = renderCard(topCard).children[0]; playerDiscardEl.appendChild(cardImg); } else { playerDiscardEl.innerHTML = '<span class="text-xs text-white/50">Discard</span>'; }
-            if (gameState.opponent_discard.length > 0) { const topCard = gameState.opponent_discard[gameState.opponent_discard.length - 1]; const cardImg = renderCard(topCard).children[0]; opponentDiscardEl.appendChild(cardImg); } else { opponentDiscardEl.innerHTML = '<span class="text-xs text-white/50">Discard</span>'; }
+        function renderPlayerHand() {
+          const handEl = document.getElementById("player-hand");
+          handEl.innerHTML = "";
+          gameState.player_hand.forEach((card) =>
+            handEl.appendChild(renderCard(card))
+          );
         }
-        function updateCounts() { document.getElementById("player-deck-count").textContent = gameState.player_deck.length; document.getElementById("opponent-deck-count").textContent = gameState.opponent_deck.length; document.getElementById("player-discard-count").textContent = gameState.player_discard.length; document.getElementById("opponent-discard-count").textContent = gameState.opponent_discard.length; }
-        function fullRender() { renderPlayerHand(); renderOpponentHand(); renderBattleZone("player-battle-zone", gameState.player_battle_zone); renderBattleZone("opponent-battle-zone", gameState.opponent_battle_zone); renderDiscardPiles(); updateCounts(); document.getElementById("turn-indicator").textContent = `${gameState.turn_player.charAt(0).toUpperCase() + gameState.turn_player.slice(1)}'s Turn`; }
-        function findCardInHand(cardName) { return gameState.player_hand.find((c) => c.name === cardName); }
-        function removeCardFromHand(cardName) { gameState.player_hand = gameState.player_hand.filter((c) => c.name !== cardName); }
-        function drawCard(player) { const deck = player === "player" ? gameState.player_deck : gameState.opponent_deck; if (deck.length > 0) { const card = deck.pop(); const hand = player === "player" ? gameState.player_hand : gameState.opponent_hand; hand.push(card); fullRender(); } }
+        function renderOpponentHand() {
+          const handEl = document.getElementById("opponent-hand");
+          handEl.innerHTML = "";
+          gameState.opponent_hand.forEach((card) =>
+            handEl.appendChild(renderCard(card, true))
+          );
+        }
+        function renderBattleZone(zoneId, cards) {
+          const zoneEl = document.getElementById(zoneId);
+          zoneEl.innerHTML = "";
+          cards.forEach((card) =>
+            zoneEl.appendChild(renderCard(card).children[0])
+          );
+        }
+        function renderDiscardPiles() {
+          const playerDiscardEl = document.getElementById(
+            "player-discard-pile"
+          );
+          const opponentDiscardEl = document.getElementById(
+            "opponent-discard-pile"
+          );
+          playerDiscardEl.innerHTML = "";
+          opponentDiscardEl.innerHTML = "";
+          if (gameState.player_discard.length > 0) {
+            const topCard =
+              gameState.player_discard[gameState.player_discard.length - 1];
+            const cardImg = renderCard(topCard).children[0];
+            playerDiscardEl.appendChild(cardImg);
+          } else {
+            playerDiscardEl.innerHTML =
+              '<span class="text-xs text-white/50">Discard</span>';
+          }
+          if (gameState.opponent_discard.length > 0) {
+            const topCard =
+              gameState.opponent_discard[gameState.opponent_discard.length - 1];
+            const cardImg = renderCard(topCard).children[0];
+            opponentDiscardEl.appendChild(cardImg);
+          } else {
+            opponentDiscardEl.innerHTML =
+              '<span class="text-xs text-white/50">Discard</span>';
+          }
+        }
+        function updateCounts() {
+          document.getElementById("player-deck-count").textContent =
+            gameState.player_deck.length;
+          document.getElementById("opponent-deck-count").textContent =
+            gameState.opponent_deck.length;
+          document.getElementById("player-discard-count").textContent =
+            gameState.player_discard.length;
+          document.getElementById("opponent-discard-count").textContent =
+            gameState.opponent_discard.length;
+        }
+        function fullRender() {
+          renderPlayerHand();
+          renderOpponentHand();
+          renderBattleZone("player-battle-zone", gameState.player_battle_zone);
+          renderBattleZone(
+            "opponent-battle-zone",
+            gameState.opponent_battle_zone
+          );
+          renderDiscardPiles();
+          updateCounts();
+          document.getElementById("turn-indicator").textContent = `${
+            gameState.turn_player.charAt(0).toUpperCase() +
+            gameState.turn_player.slice(1)
+          }'s Turn`;
+        }
+        function findCardInHand(cardName) {
+          return gameState.player_hand.find((c) => c.name === cardName);
+        }
+        function removeCardFromHand(cardName) {
+          gameState.player_hand = gameState.player_hand.filter(
+            (c) => c.name !== cardName
+          );
+        }
+        function drawCard(player) {
+          const deck =
+            player === "player"
+              ? gameState.player_deck
+              : gameState.opponent_deck;
+          if (deck.length > 0) {
+            const card = deck.pop();
+            const hand =
+              player === "player"
+                ? gameState.player_hand
+                : gameState.opponent_hand;
+            hand.push(card);
+            fullRender();
+          }
+        }
+        /**
+         * Pomoćna funkcija za generiranje nasumičnog špila od 60 karata iz skupa svih dostupnih karata.
+         * Ova funkcija osigurava da je svaki špil jedinstven i da poštuje pravilo o veličini špila.
+         * @param {Array<Object>} cardPool - Niz svih dostupnih karata.
+         * @returns {Array<Object>} Nasumično generiran špil od 60 karata.
+         */
+        function generateRandomDeck(cardPool) {
+          const shuffledPool = [...cardPool].sort(() => Math.random() - 0.5);
+          const deck = [];
+
+          // Napuni špil sa 60 karata. Za složenija pravila (npr. najviše 4 iste karte),
+          // ovdje bi se trebala dodati dodatna logika.
+          for (let i = 0; i < 60; i++) {
+            // Uzima kartu iz promiješanog skupa i dodaje je u špil.
+            // i % shuffledPool.length osigurava da se karte ponavljaju ako je skup manji od 60.
+            deck.push(shuffledPool[i % shuffledPool.length]);
+          }
+          return deck;
+        }
+
+        /**
+         * Inicijalizira igru: dohvaća karte, generira špilove,
+         * vuče početne ruke i iscrtava stanje igre.
+         */
         async function initializeGame() {
-          const allCardNames = [ "Abra","Alakazam","Arcanine","Beedrill","Bill","Blastoise","Bulbasaur","Caterpie","Chansey","Charizard","Charmander","Charmeleon","Clefairy_Doll","Clefairy","Computer_Search","Defender","Devolution_Spray","Dewgong","Diglett","Doduo","Double_Colorless_Energy","Dragonair","Dratini","Drowzee","Dugtrio","Electabuzz","Electrode","Energy_Removal","Energy_Retrieval","Farfetch'd","Fighting_Energy","Fire_Energy","Full_Heal","Gastly","Grass_Energy","Growlithe","Gust_of_Wind","Gyarados","Haunter","Hitmonchan","Impostor_Professor_Oak","Item_Finder","Ivysaur","Jynx","Kadabra","Kakuna","Koffing","Lass","Lightning_Energy","Machamp","Machoke","Machop","Magikarp","Magmar","Magnemite","Magneton","Maintenance","Metapod","Mewtwo","Nidoking","NidoranMale","Nidorino","Ninetales","Onix","Pidgeotto","Pidgey","Pikachu","PlusPower","Pokédex","Pokémon_Breeder","pokemon_card_game","Pokémon_Center","Pokémon_Flute","Pokémon_Trader","Poliwag","Poliwhirl","Poliwrath","Ponyta","Porygon","Potion","Professor_Oak","Psychic_Energy","Raichu","Raticate","Rattata","Revive","Sandshrew","Scoop_Up","Seel","Squirtle","Starmie","Staryu","Super_Energy_Removal","Super_Potion","Switch","Tangela","Venusaur","Voltorb","Vulpix","Wartortle","Water_Energy","Weedle","Zapdos", ];
-          const cardPool = allCardNames.map((name) => ({ name }));
-          gameState.player_deck = [...cardPool].sort(() => Math.random() - 0.5);
-          gameState.opponent_deck = [...cardPool].sort(() => Math.random() - 0.5);
-          for (let i = 0; i < 5; i++) { drawCard("player"); drawCard("opponent"); }
-          fullRender();
+          try {
+            // 1. Dohvati podatke o svim kartama iz JSON datoteke
+            const response = await fetch("assets/cards/deck.json");
+            if (!response.ok) {
+              throw new Error(`HTTP greška! Status: ${response.status}`);
+            }
+            const allCardsData = await response.json();
+
+            // Kreiraj osnovni skup karata iz kojeg će se generirati špilovi
+            const cardPool = allCardsData.map((card) => ({ name: card.name, id: card.id }));
+
+            if (cardPool.length === 0) {
+              console.error(
+                "Skup karata (cardPool) je prazan. Provjerite deck.json."
+              );
+              return;
+            }
+
+            // 2. Generiraj nasumičan špil od 60 karata za svakog igrača
+            gameState.player_deck = generateRandomDeck(cardPool);
+            gameState.opponent_deck = generateRandomDeck(cardPool);
+
+            // 3. Svaki igrač vuče 7 karata za početnu ruku
+            for (let i = 0; i < 7; i++) {
+              drawCard("player");
+              drawCard("opponent");
+            }
+
+            // Iscrtaj cijelo početno stanje igre
+            fullRender();
+          } catch (error) {
+            console.error("Neuspješna inicijalizacija igre:", error);
+          }
         }
         let draggedCardName = null;
-        document.addEventListener("dragstart", (e) => { if (e.target.classList.contains("card")) { draggedCardName = e.target.dataset.cardName; e.target.classList.add("dragging"); } });
-        document.addEventListener("dragend", (e) => { if (e.target.classList.contains("card")) { draggedCardName = null; e.target.classList.remove("dragging"); } });
-        
+        document.addEventListener("dragstart", (e) => {
+          if (e.target.classList.contains("card")) {
+            draggedCardName = e.target.dataset.cardName;
+            e.target.classList.add("dragging");
+          }
+        });
+        document.addEventListener("dragend", (e) => {
+          if (e.target.classList.contains("card")) {
+            draggedCardName = null;
+            e.target.classList.remove("dragging");
+          }
+        });
+
         const battleZone = document.getElementById("player-battle-zone");
-        battleZone.addEventListener("dragover", (e) => { e.preventDefault(); battleZone.classList.add("drag-over"); });
-        battleZone.addEventListener("dragleave", () => { battleZone.classList.remove("drag-over"); });
+        battleZone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          battleZone.classList.add("drag-over");
+        });
+        battleZone.addEventListener("dragleave", () => {
+          battleZone.classList.remove("drag-over");
+        });
         battleZone.addEventListener("drop", async (e) => {
           e.preventDefault();
           battleZone.classList.remove("drag-over");
           const droppedCardName = draggedCardName;
           if (droppedCardName) {
-            const action = { action_type: "play_card", card_name: droppedCardName, target: "battle_zone" };
+            const action = {
+              action_type: "play_card",
+              card_name: droppedCardName,
+              target: "battle_zone",
+            };
             const result = await validateMoveWithServer(action);
             if (result === "VALID") {
               showNotification("Move Valid!", true);
@@ -254,45 +476,60 @@
         });
 
         const discardPile = document.getElementById("player-discard-pile");
-        discardPile.addEventListener("dragover", (e) => { e.preventDefault(); discardPile.classList.add("drag-over"); });
-        discardPile.addEventListener("dragleave", () => { discardPile.classList.remove("drag-over"); });
+        discardPile.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          discardPile.classList.add("drag-over");
+        });
+        discardPile.addEventListener("dragleave", () => {
+          discardPile.classList.remove("drag-over");
+        });
         discardPile.addEventListener("drop", (e) => {
-            e.preventDefault();
-            discardPile.classList.remove("drag-over");
-            const droppedCardName = draggedCardName;
-            if (droppedCardName) {
-                const card = findCardInHand(droppedCardName);
-                if (card) {
-                    removeCardFromHand(droppedCardName);
-                    gameState.player_discard.push(card);
-                    fullRender();
-                    showNotification(`Discarded ${droppedCardName}`, true);
-                }
+          e.preventDefault();
+          discardPile.classList.remove("drag-over");
+          const droppedCardName = draggedCardName;
+          if (droppedCardName) {
+            const card = findCardInHand(droppedCardName);
+            if (card) {
+              removeCardFromHand(droppedCardName);
+              gameState.player_discard.push(card);
+              fullRender();
+              showNotification(`Discarded ${droppedCardName}`, true);
             }
+          }
         });
 
         // FIX: Update the deck click listener to validate the move with the server
-        document.getElementById("player-deck").addEventListener("click", async () => {
+        document
+          .getElementById("player-deck")
+          .addEventListener("click", async () => {
             const action = {
-                action_type: "draw_card",
-                card_name: null,
-                target: "player_hand"
+              action_type: "draw_card",
+              card_name: null,
+              target: "player_hand",
             };
             const result = await validateMoveWithServer(action);
 
             if (result === "VALID") {
-                drawCard("player");
-                showNotification("Card drawn!", true);
+              drawCard("player");
+              showNotification("Card drawn!", true);
             } else {
-                showNotification(result, false);
-                console.error("Invalid move:", result);
+              showNotification(result, false);
+              console.error("Invalid move:", result);
             }
-        });
+          });
 
-        document.getElementById("end-turn-btn").addEventListener("click", () => { gameState.turn_player = gameState.turn_player === "player" ? "opponent" : "player"; gameState.turn_count++; fullRender(); });
+        document
+          .getElementById("end-turn-btn")
+          .addEventListener("click", () => {
+            gameState.turn_player =
+              gameState.turn_player === "player" ? "opponent" : "player";
+            gameState.turn_count++;
+            gameState.actions_taken_this_turn = 0;
+            fullRender();
+          });
 
         connectToServer();
       });
     </script>
-</body>
+  </body>
 </html>

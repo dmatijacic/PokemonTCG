@@ -17,7 +17,8 @@ class GameState(BaseModel):
     opponent_hand: List[str]
     player_battle_zone: List[str]
     opponent_battle_zone: List[str]
-    turn_count: int
+    actions_taken_this_turn: int = 0
+
 
 class Action(BaseModel):
     action_type: str

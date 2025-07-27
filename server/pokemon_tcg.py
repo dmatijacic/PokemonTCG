@@ -43,7 +43,7 @@ app.include_router(judge_router, prefix="/mcp/judge", tags=["Judge"])
 # --- 4. Mount the Static Frontend Files ---
 project_root = Path(__file__).parent.parent
 client_dir = project_root / "client"
-assets_dir = client_dir / "assets"
+assets_dir = project_root / "assets"
 
 # Mount the 'assets' directory first.
 app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")

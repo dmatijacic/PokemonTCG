@@ -2,7 +2,7 @@ import os
 import requests
 
 SET_ID = "base1"  # npr. 'base1' za Base Set
-DEST_DIR = "assets/cards"
+DEST_DIR = "assets/cards/images"
 
 os.makedirs(DEST_DIR, exist_ok=True)
 
@@ -13,7 +13,7 @@ data = response.json()
 cards = data["cards"]
 
 for card in cards:
-    name = card["name"].replace(" ", "_").replace("/", "_").replace("♂", "Male").replace("♀", "Female")
+    name = card["id"]
     image_url = card["image"] + "/high.png"
     image_path = os.path.join(DEST_DIR, f"{name}.png")
 

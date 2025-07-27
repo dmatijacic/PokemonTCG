@@ -1,75 +1,110 @@
-# judge.py
+# server/judge.py
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from enum import Enum
+from contextlib import asynccontextmanager
 
-import requests
-import json
-from fastapi import APIRouter
-from model import ToolInput
-from pathlib import Path
+# Novi importi za agenta!
+from langchain_openai import ChatOpenAI
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import HumanMessage
 
-# --- Judge Protocol Router ---
-judge_router = APIRouter()
-OLLAMA_URL = "http://host.docker.internal:11434/api/generate" 
+# --- Modeli ostaju isti ---
+class Player(str, Enum):
+    PLAYER = "player"
+    OPPONENT = "opponent"
 
-def load_rules():
-    rules_path = Path(__file__).parent / "rules.md"
-    with open(rules_path, "r") as f:
-        return f.read()
+class GameState(BaseModel):
+    player_hand: list[str] = []
+    player_battle_zone: list[str] = []
+    turn_player: Player
 
-@judge_router.post("/tools/validate_move")
-def validate_move(tool_input: ToolInput) -> dict:
+class ProposedAction(BaseModel):
+    action_type: str
+    card_name: str | None = None
+
+class ToolInput(BaseModel):
+    game_state: GameState
+    proposed_action: ProposedAction
+
+# --- Globalni Agent ---
+# Kreiramo globalnu varijablu za našeg agenta
+# Inicijalizirat će se pri pokretanju servera
+agent_executor = None
+
+@asynccontextmanager
+async def lifespan(app: APIRouter):
+    # ...
+    print("Initializing AI Agent...")
     
-    # --- KEY CHANGE: HYBRID LOGIC ---
-    # 1. Handle simple, deterministic rules with Python first.
-    bench_count = len(tool_input.game_state.player_battle_zone)
-
-    # Rule #3 Check: Is the bench full?
-    # This assumes playing a card adds a Pokémon. We can make this smarter later.
-    if tool_input.proposed_action.action_type == "play_card":
-        if bench_count >= 5:
-            print("[Judge] Move invalidated by Python logic: Bench is full.")
-            return {"result": "INVALID: The bench is full (5 Pokémon limit)."}
-
-    # 2. If the move passes the simple checks, then ask the LLM for more complex validation.
-    print("[Judge] Move passed initial Python checks. Forwarding to LLM...")
-    
-    rules = load_rules()
-    known_cards = tool_input.game_state.player_hand
-
-    prompt = f"""
-    {rules}
-
-    === Known Playable Cards ===
-    The only cards currently in play are: {known_cards}
-
-    === Current Game State ===
-    - Player's Hand: {tool_input.game_state.player_hand}
-    - Player's Battle Zone (Bench): {tool_input.game_state.player_battle_zone} (Current Count: {bench_count})
-    - The current turn player is: {tool_input.game_state.turn_player.value}
-
-    === Proposed Action ===
-    - Action Type: {tool_input.proposed_action.action_type}
-    - Card Name: {tool_input.proposed_action.card_name}
-
-    Your Task: Examine the 'Proposed Action'. Does it break any of the 'Pokémon TCG Core Rules' listed above?
-    - If the action breaks a rule, respond with 'INVALID:' and state the rule number that was broken.
-    - If the action does not break any rules, respond with ONLY the single word 'VALID'.
-    """
-    
-    print(f"[Judge] Sending prompt to LLM...")
-    print(f"[Judge] Prompt: {prompt}")
-
-    payload = {
-        "model": "pokemon-judge",
-        "prompt": prompt,
-        "stream": False
-    }
+    client = MultiServerMCPClient({
+        "validator": {
+            "transport": "streamable_http",
+            # ISPRAVAK: Uklonite /mcp/ s kraja URL-a
+            "url": "http://localhost:8001/mcp", 
+        }
+    })
 
     try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=120) 
-        response.raise_for_status()
-        llm_response_text = response.json().get("response", "").strip()
-        print(f"[Judge] LLM responded: '{llm_response_text}'")
-        return {"result": llm_response_text}
-    except requests.exceptions.RequestException as e:
-        print(f"[Judge] Error communicating with Ollama: {e}")
-        return {"result": f"INVALID: Could not contact the game judge. Error: {e}"}
+        tools = await client.get_tools()
+        print(f"Successfully loaded tools from MCP server: {[tool.name for tool in tools]}")
+    except Exception as e:
+        print(f"FATAL: Could not connect to MCP server. Is it running? Error: {e}")
+        tools = []
+    
+
+    # 3. Kreiranje LLM-a
+    # Za lokalni model, koristili bismo ChatOllama, ali za primjer koristimo OpenAI
+    # jer je standard za ReAct agente.
+    # llm = ChatOllama(model="pokemon-judge:latest")
+    llm = ChatOpenAI(model="gpt-4", temperature=0)
+    agent_executor = create_react_agent(llm, tools)
+    print("AI Agent initialized successfully!")
+    yield
+    print("Shutting down AI Agent.")
+
+
+judge_router = APIRouter(lifespan=lifespan)
+
+@judge_router.post("/tools/validate_move")
+async def validate_move(tool_input: ToolInput) -> dict:
+    """
+    Validira potez tako što pita AI agenta za odluku.
+    Agent sam odlučuje koje alate treba pozvati.
+    """
+    if not agent_executor:
+        raise HTTPException(status_code=503, detail="AI Agent is not available.")
+
+    # Formatiramo upit za agenta
+    action = tool_input.proposed_action
+    state = tool_input.game_state
+    
+    prompt = f"""
+    The user wants to perform the action '{action.action_type}' with the card '{action.card_name}'.
+    The current game state is:
+    - Hand: {state.player_hand}
+    - Bench: {state.player_battle_zone}
+
+    Use your available tools to check if the move is valid. If all tool checks pass,
+    then use your knowledge of Pokémon TCG rules to make a final decision.
+    Respond with only 'VALID' or 'INVALID: [reason]'.
+    """
+    
+    print(f"[Judge] Invoking agent with prompt:\n{prompt}")
+
+    try:
+        # Pozivamo agenta da obradi upit
+        response = await agent_executor.ainvoke({
+            "messages": [HumanMessage(content=prompt)]
+        })
+        
+        # Formatiramo odgovor
+        # ReAct agenti imaju izlaz u 'messages' listi, zadnja poruka je odgovor
+        final_answer = response['messages'][-1].content
+        print(f"[Judge] Agent responded: {final_answer}")
+        return {"result": final_answer}
+
+    except Exception as e:
+        print(f"Agent execution failed: {e}")
+        raise HTTPException(status_code=500, detail="Error during agent execution.")
