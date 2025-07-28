@@ -37,12 +37,14 @@ window.mcp = (() => {
 
   class StreamableHTTPClientTransport {
     constructor(baseUrl) {
-      this.baseUrl = baseUrl;
-      console.log(`HTTP Transport initialized for URL: ${baseUrl}`);
+      // ISPRAVAK: Osigurajmo da bazni URL uvijek ima kosu crtu na kraju
+      this.baseUrl = baseUrl.href.endsWith('/') ? baseUrl.href : `${baseUrl.href}/`;
+      console.log(`HTTP Transport initialized for URL: ${this.baseUrl}`);
     }
 
     async callTool(protocol, toolName, params) {
-        const toolUrl = new URL(`${this.baseUrl.pathname}${protocol}/tools/${toolName}`, this.baseUrl.origin);
+        // ISPRAVAK: Jednostavnija i sigurnija konstrukcija URL-a
+        const toolUrl = new URL(`${protocol}/tools/${toolName}`, this.baseUrl);
         console.log(`Calling tool at: ${toolUrl}`);
         
         const response = await fetch(toolUrl, {
@@ -52,11 +54,12 @@ window.mcp = (() => {
         });
 
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Tool call failed with status:", response.status, "and message:", errorText);
             throw new Error(`Tool call failed with status: ${response.status}`);
         }
         
         const data = await response.json();
-        // The python server wraps the result, so we extract it.
         return data.result;
     }
   }

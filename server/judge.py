@@ -1,110 +1,134 @@
 # server/judge.py
-from fastapi import APIRouter, HTTPException
+import os
+import re
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from enum import Enum
-from contextlib import asynccontextmanager
+import json
+# DODAJTE OVE IMPORTE
+from typing import TypedDict, Annotated, Sequence
+import operator
 
-# Novi importi za agenta!
-from langchain_openai import ChatOpenAI
+# LangChain & MCP Imports
+from langchain_ollama import ChatOllama
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import HumanMessage
+from langchain_core.tools import BaseTool
+from langchain_core.messages import BaseMessage, HumanMessage
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolNode
 
-# --- Modeli ostaju isti ---
-class Player(str, Enum):
-    PLAYER = "player"
-    OPPONENT = "opponent"
+from server.model import ToolInput
 
-class GameState(BaseModel):
-    player_hand: list[str] = []
-    player_battle_zone: list[str] = []
-    turn_player: Player
+# --- Definiranje stanja za naš LangGraph graf ---
+class AgentState(TypedDict):
+    messages: Annotated[Sequence[BaseMessage], operator.add]
 
-class ProposedAction(BaseModel):
-    action_type: str
-    card_name: str | None = None
+# --- Agent Management (Potpuno novo) ---
+_agent_executor = None
+_llm_with_tools = None # Poseban LLM za odabir alata
+_final_answer_llm = None # Poseban LLM za konačni odgovor
 
-class ToolInput(BaseModel):
-    game_state: GameState
-    proposed_action: ProposedAction
+async def initialize_agent():
+    """Inicijalizira LangGraph agenta, alate i executor."""
+    global _agent_executor, _llm_with_tools, _final_answer_llm
+    print("Initializing Custom LangGraph Agent...")
 
-# --- Globalni Agent ---
-# Kreiramo globalnu varijablu za našeg agenta
-# Inicijalizirat će se pri pokretanju servera
-agent_executor = None
-
-@asynccontextmanager
-async def lifespan(app: APIRouter):
-    # ...
-    print("Initializing AI Agent...")
-    
-    client = MultiServerMCPClient({
-        "validator": {
-            "transport": "streamable_http",
-            # ISPRAVAK: Uklonite /mcp/ s kraja URL-a
-            "url": "http://localhost:8001/mcp", 
-        }
-    })
-
+    # 1. Spajanje na MCP server i dohvaćanje alata
+    client = MultiServerMCPClient({"validator": {"transport": "streamable_http", "url": "http://localhost:8001/mcp"}})
     try:
         tools = await client.get_tools()
-        print(f"Successfully loaded tools from MCP server: {[tool.name for tool in tools]}")
+        tool_executor = ToolNode(tools)
+        print(f"Successfully loaded tools: {[t.name for t in tools]}")
     except Exception as e:
-        print(f"FATAL: Could not connect to MCP server. Is it running? Error: {e}")
-        tools = []
+        print(f"FATAL: Could not load tools. Error: {e}")
+        return
+
+    # 2. Kreiranje dva LLM-a
+    # Jedan za pozivanje alata (zahtijeva JSON format)
+    _llm_with_tools = ChatOllama(model="pokemon-judge:latest", temperature=0, base_url=os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434"), format="json").bind_tools(tools)
+    # Drugi za generiranje konačnog odgovora (običan tekst)
+    _final_answer_llm = ChatOllama(model="pokemon-judge:latest", temperature=0, base_url=os.getenv("OLLAMA_BASE_URL", "http://host.docker.internal:11434"))
+
+    # 4. Definiranje logike grafa
+    def should_continue(state: AgentState) -> str:
+        """Odlučuje hoće li ponovno pozvati alate ili generirati konačni odgovor."""
+        last_message = state['messages'][-1]
+        if not hasattr(last_message, 'tool_calls') or not last_message.tool_calls:
+            return "end" # Ako nema poziva alata, idemo na konačni odgovor
+        return "continue" # Inače, nastavi s izvršavanjem alata
+
+    def call_model(state: AgentState):
+        """Poziva LLM da odluči o sljedećem koraku (poziv alata)."""
+        response = _llm_with_tools.invoke(state['messages'])
+        return {"messages": [response]}
+        
+    def generate_final_answer(state: AgentState):
+        """Generira konačni odgovor nakon što su alati izvršeni."""
+        # Kreiramo novi prompt s cijelom povijesti, uključujući rezultate alata
+        final_prompt = "Based on the preceding conversation and tool results, is the original move VALID or INVALID? Respond with only one of those two words, followed by a brief reason if invalid."
+        final_state = state['messages'] + [HumanMessage(content=final_prompt)]
+        
+        response = _final_answer_llm.invoke(final_state)
+        return {"messages": [response]}
+
+    # 5. Kreiranje grafa
+    workflow = StateGraph(AgentState)
+    workflow.add_node("agent", call_model)
+    workflow.add_node("tools", tool_executor)
+    workflow.add_node("final_answer", generate_final_answer) # Novi čvor
     
+    workflow.set_entry_point("agent")
+    
+    workflow.add_conditional_edges(
+        "agent",
+        should_continue,
+        {
+            "continue": "tools",
+            "end": "final_answer" # Ako je kraj, idi na 'final_answer'
+        }
+    )
+    workflow.add_edge("tools", "agent")
+    workflow.add_edge("final_answer", END) # 'final_answer' je kraj grafa
 
-    # 3. Kreiranje LLM-a
-    # Za lokalni model, koristili bismo ChatOllama, ali za primjer koristimo OpenAI
-    # jer je standard za ReAct agente.
-    # llm = ChatOllama(model="pokemon-judge:latest")
-    llm = ChatOpenAI(model="gpt-4", temperature=0)
-    agent_executor = create_react_agent(llm, tools)
-    print("AI Agent initialized successfully!")
-    yield
-    print("Shutting down AI Agent.")
+    # 6. Kompajliranje grafa
+    _agent_executor = workflow.compile()
+    print("Custom LangGraph Agent with Final Answer node initialized successfully!")
 
 
-judge_router = APIRouter(lifespan=lifespan)
+def get_agent_executor():
+    if not _agent_executor:
+        raise HTTPException(status_code=503, detail="AI Agent is not available.")
+    return _agent_executor
+
+# --- Router ---
+judge_router = APIRouter()
 
 @judge_router.post("/tools/validate_move")
-async def validate_move(tool_input: ToolInput) -> dict:
-    """
-    Validira potez tako što pita AI agenta za odluku.
-    Agent sam odlučuje koje alate treba pozvati.
-    """
-    if not agent_executor:
-        raise HTTPException(status_code=503, detail="AI Agent is not available.")
-
-    # Formatiramo upit za agenta
+async def validate_move(
+    tool_input: ToolInput,
+    agent_executor = Depends(get_agent_executor)
+) -> dict:
     action = tool_input.proposed_action
     state = tool_input.game_state
     
+    # Novi, puno jednostavniji prompt!
     prompt = f"""
-    The user wants to perform the action '{action.action_type}' with the card '{action.card_name}'.
-    The current game state is:
-    - Hand: {state.player_hand}
-    - Bench: {state.player_battle_zone}
-
-    Use your available tools to check if the move is valid. If all tool checks pass,
-    then use your knowledge of Pokémon TCG rules to make a final decision.
-    Respond with only 'VALID' or 'INVALID: [reason]'.
+    A user wants to perform the action '{action.action_type}' with the card '{action.card_name}'.
+    The current hand is {state.player_hand} and the bench is {state.player_bench}.
+    First, call the necessary tools to check if the move is valid based on the game state.
+    After the tools have been called, provide a final answer: either 'VALID' or 'INVALID: [reason]'.
     """
     
-    print(f"[Judge] Invoking agent with prompt:\n{prompt}")
-
+    print(f"[Judge] Invoking custom agent...")
     try:
-        # Pozivamo agenta da obradi upit
+        # Pozivamo naš kompajlirani graf
         response = await agent_executor.ainvoke({
             "messages": [HumanMessage(content=prompt)]
         })
-        
-        # Formatiramo odgovor
-        # ReAct agenti imaju izlaz u 'messages' listi, zadnja poruka je odgovor
         final_answer = response['messages'][-1].content
         print(f"[Judge] Agent responded: {final_answer}")
         return {"result": final_answer}
-
     except Exception as e:
-        print(f"Agent execution failed: {e}")
-        raise HTTPException(status_code=500, detail="Error during agent execution.")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error during agent execution: {e}")

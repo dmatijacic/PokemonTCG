@@ -207,8 +207,8 @@
           actions_taken_this_turn: 0,
           player_hand: [],
           opponent_hand: [],
-          player_battle_zone: [],
-          opponent_battle_zone: [],
+          player_bench: [],
+          opponent_bench: [],
           player_deck: [],
           opponent_deck: [],
           player_discard: [],
@@ -223,11 +223,11 @@
           const statePayload = {
             turn_player: gameState.turn_player,
             player_hand: gameState.player_hand.map((c) => c.name),
+            player_deck: gameState.player_deck.map((c) => c.name),
+            player_bench: gameState.player_bench.map((c) => c.name),
             opponent_hand: gameState.opponent_hand.map((c) => c.name),
-            player_battle_zone: gameState.player_battle_zone.map((c) => c.name),
-            opponent_battle_zone: gameState.opponent_battle_zone.map(
-              (c) => c.name
-            ),
+            opponent_deck: gameState.opponent_deck.map((c) => c.name),
+            opponent_bench: gameState.opponent_bench.map((c) => c.name),
             turn_count: gameState.turn_count,
             actions_taken_this_turn: gameState.actions_taken_this_turn++,
           };
@@ -333,10 +333,10 @@
         function fullRender() {
           renderPlayerHand();
           renderOpponentHand();
-          renderBattleZone("player-battle-zone", gameState.player_battle_zone);
+          renderBattleZone("player-battle-zone", gameState.player_bench);
           renderBattleZone(
             "opponent-battle-zone",
-            gameState.opponent_battle_zone
+            gameState.opponent_bench
           );
           renderDiscardPiles();
           updateCounts();
@@ -465,7 +465,7 @@
               const card = findCardInHand(droppedCardName);
               if (card) {
                 removeCardFromHand(droppedCardName);
-                gameState.player_battle_zone.push(card);
+                gameState.player_bench.push(card);
                 fullRender();
               }
             } else {
@@ -503,7 +503,7 @@
           .getElementById("player-deck")
           .addEventListener("click", async () => {
             const action = {
-              action_type: "draw_card",
+              action_type: "draw_card_from_deck",
               card_name: null,
               target: "player_hand",
             };

@@ -17,20 +17,16 @@ def is_card_in_hand(card_name: str, hand: list[str]) -> str:
 
 @tool()
 def is_first_action_of_turn(actions_taken_this_turn: int) -> bool:
-    """Provjerava je li ovo prva akcija u potezu."""
+    """Checks if this is the first action of the turn."""
     # Pretpostavljamo da klijent šalje broj akcija poduzetih u ovom potezu.
     return actions_taken_this_turn == 0
 
 @tool()
-def is_bench_full(bench: list[str]) -> str:
+def is_bench_full(bench: list[str]) -> bool:
     """
     Checks if the bench is full (has 5 or more Pokémon).
-    Returns 'VALID' if the bench is not full, otherwise 'INVALID'.
     """
-    print(f"[MCP-TOOL] Checking if bench is full. Size: {len(bench)}")
-    if len(bench) >= 5:
-        return "INVALID: Your Bench is full (maximum 5 Pokémon)."
-    return "VALID"
+    return len(bench) >= 5
 
 # Kreiramo FastMCP objekt. On je sam po sebi ASGI aplikacija.
 mcp_app = FastMCP(
