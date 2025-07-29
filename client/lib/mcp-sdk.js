@@ -22,6 +22,7 @@ window.mcp = (() => {
       // In a real SDK, this would establish a connection and get a list of tools.
       // We will mock the tools we know the server has.
       this.tools.judge = {
+        validate_setup: (params) => this.transport.callTool('judge', 'validate_setup', params),
         validate_move: (params) => this.transport.callTool('judge', 'validate_move', params),
       };
       this.tools.opponent = {

@@ -3,7 +3,6 @@ from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-# --- Pydantic Modeli (ostaju isti) ---
 class Player(str, Enum):
     PLAYER = "player"
     OPPONENT = "opponent"
@@ -20,6 +19,9 @@ class Action(str, Enum):
     SWITCH = "switch"
     DRAW = "draw"
     DISCARD = "discard"
+    VALIDATE = 'validate'
+
+# --- Pydantic Modeli ---
 
 class GameState(BaseModel):
     turn_player: Player
@@ -46,3 +48,10 @@ class ProposedAction(BaseModel):
 class ToolInput(BaseModel):
     game_state: GameState
     proposed_action: ProposedAction
+
+class ValidationResult(BaseModel):
+    """
+    The structured result of a game rule validation.
+    """
+    is_valid: bool = Field(..., description="A boolean indicating if the action is valid.")
+    reason: Optional[str] = Field(None, description="A precise reason citing the rule that was violated. This is only required if the move is invalid.")

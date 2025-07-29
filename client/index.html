@@ -320,8 +320,19 @@
               id: card.id,
             }));
 
+            let isValidSetup = false;
             gameState.player_deck = generateRandomDeck(cardPool);
             gameState.opponent_deck = generateRandomDeck(cardPool);
+
+            console.info("Generated Player Deck:", gameState.player_deck);
+            console.info("Generated Opponent Deck:", gameState.opponent_deck);
+            console.info("Validating setup...");
+            const { result } = await validateSetup();
+            console.info("Setup validation result:", result);
+            if (!result.startsWith("VALID")) {
+              showNotification(result, false);
+              throw new Error("Invalid setup. Application stopped.");
+            }
 
             for (let i = 0; i < 7; i++) {
               drawCard("player");
@@ -368,11 +379,18 @@
           }
         }
 
-        async function validateSetup(proposed_action) {
+        async function validateSetup() {
           if (!mcpClient) {
             console.error("MCP Client not connected.");
             return { result: "INVALID: Not connected to server." };
           }
+
+          proposed_action = {
+            action: "validate",
+            source: "deck",
+            target: "deck",
+            context: {},
+          };
 
           const statePayload = {
             turn_player: gameState.turn_player,
@@ -393,12 +411,15 @@
           };
 
           try {
-            const result = await mcpClient.tools.judge.validate_setup(toolInput);
+            const result = await mcpClient.tools.judge.validate_setup(
+              toolInput
+            );
             return { result: String(result || "").trim() };
           } catch (error) {
-            console.error("Error calling validate_move tool:", error);
-            const errorMessage =
-              error.message || "Server error during validation.";
+            // Correct the error message here
+            console.error("Error calling validate_setup tool:", error);
+            const errorMessage = error.message || "Server error during setup validation.";
+            await new Promise(r => setTimeout(r, 5000)); // Optional delay for better UX
             return { result: `INVALID: ${errorMessage}` };
           }
         }
@@ -462,7 +483,7 @@
                 action: "play",
                 source: "hand",
                 target: "bench",
-                context: { card: draggedCard}
+                context: { card: draggedCard },
               };
               const { result } = await validateMoveWithServer(proposed_action);
 

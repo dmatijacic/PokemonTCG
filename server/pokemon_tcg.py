@@ -8,9 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 # --- Lokalni Moduli (ISPRAVAK OVDJE) ---
-sys.path.append(str(Path(__file__).parent.resolve()))
+project_root = Path(__file__).parent.parent
+sys.path.append(str(project_root))
+
 # Uklonili smo 'get_agent_executor' jer više ne postoji
-from judge import judge_router, initialize_agent
+from server.judge import judge_router, initialize_agent
 
 # --- Lifespan za glavnu aplikaciju ---
 @asynccontextmanager
