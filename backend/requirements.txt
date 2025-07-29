@@ -15,7 +15,7 @@ langchain-anthropic>=0.1.0
 langfuse>=2.0.0
 
 # Pokemon card data
-tcgdexsdk>=2.0.0
+tcgdex-sdk>=2.0.0
 
 # Database and caching
 psycopg2-binary>=2.9.0
