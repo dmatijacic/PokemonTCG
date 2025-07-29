@@ -82,6 +82,3 @@ assets_dir = project_root / "assets"
 
 app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 app.mount("/", StaticFiles(directory=client_dir, html=True), name="client")
-
-
-app.settings.log_level = "trace"

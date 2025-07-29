@@ -1,2 +1,5 @@
 fastmcp[cli]
 pydantic
+langchain
+langgraph
+langchain_google_genai

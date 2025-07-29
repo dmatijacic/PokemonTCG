@@ -8,36 +8,40 @@ class Player(str, Enum):
     PLAYER = "player"
     OPPONENT = "opponent"
 
-            # turn_player: gameState.turn_player,
+class GameZone(str, Enum):
+    HAND = "hand"
+    BENCH = "bench"
+    DECK = "deck"
+    CARD = "card"
 
-            # player_hand: gameState.player_hand.map((c) => c.name),
-            # player_deck: gameState.player_deck.map((c) => c.name),
-            # player_bench: gameState.player_bench.map((c) => c.name),
+class Action(str, Enum):
+    PLAY = "play"
+    ATTACK = "attack"
+    SWITCH = "switch"
+    DRAW = "draw"
+    DISCARD = "discard"
 
-            # opponent_hand: gameState.opponent_hand.map((c) => c.name),
-            # opponent_deck: gameState.opponent_deck.map((c) => c.name),
-            # opponent_bench: gameState.opponent_bench.map((c) => c.name),
-            # turn_count: gameState.turn_count,
-            # actions_taken_this_turn: gameState.actions_taken_this_turn++,
-    
 class GameState(BaseModel):
     turn_player: Player
 
     player_hand: list[str] = []
     player_deck: list[str] = []
     player_bench: list[str] = []
+    player_active_pokemon: Optional[str] = None
 
     opponent_hand: list[str] = []
     opponent_deck: list[str] = []
     opponent_bench: list[str] = []
+    opponent_active_pokemon: Optional[str] = None
     
     turn_count: int
     actions_taken_this_turn: int = 0
 
 class ProposedAction(BaseModel):
-    action_type: str
-    card_name: str | None = None
-    target: str | None = None
+    action: Action
+    source: GameZone | None = None
+    target: GameZone | None = None
+    context: dict = Field(default_factory=dict)
 
 class ToolInput(BaseModel):
     game_state: GameState
