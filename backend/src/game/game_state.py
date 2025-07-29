@@ -1,0 +1,1 @@
+# TODO: Implement Pokemon game state management

@@ -1,0 +1,58 @@
+// .devcontainer/devcontainer.json
+{
+  "name": "Pokemon TCG LLM Education Platform",
+  "dockerComposeFile": "../docker-compose.dev.yml", 
+  "service": "pokemon-game",
+  "workspaceFolder": "/workspace",
+  
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+        "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+        "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+        "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+        "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+        "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+        "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance", 
+        "ms-python.black-formatter",
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "github.copilot",
+        "ms-vscode.live-server",
+        "esbenp.prettier-vscode",
+        "formulahendry.auto-rename-tag",
+        "ms-vscode.vscode-json"
+      ]
+    }
+  },
+
+  "forwardPorts": [
+    8000,  // FastAPI Pokemon game server
+    5173,  // Vite Pokemon game frontend
+    3000,  // Langfuse AI monitoring dashboard
+    6379,  // Redis (Pokemon game state)
+    5432   // PostgreSQL (Pokemon card database)
+  ],
+
+  "postCreateCommand": "pip install -r backend/requirements.txt && cd frontend && npm install && python scripts/setup_pokemon_database.py",
+  
+  "remoteUser": "vscode",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}

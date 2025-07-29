@@ -1,0 +1,37 @@
+# Pokemon TCG LLM Education Platform - Python Dependencies
+
+# Core web framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+websockets>=11.0
+aiofiles>=23.0.0
+python-multipart>=0.0.6
+
+# AI and LLM libraries
+langchain>=0.1.0
+langgraph>=0.0.40
+langchain-openai>=0.1.0
+langchain-anthropic>=0.1.0
+langfuse>=2.0.0
+
+# Pokemon card data
+tcgdexsdk>=2.0.0
+
+# Database and caching
+psycopg2-binary>=2.9.0
+redis>=4.0.0
+sqlalchemy>=2.0.0
+
+# Image processing for Pokemon cards
+pillow>=10.0.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+pylint>=2.17.0
+mypy>=1.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.0.0

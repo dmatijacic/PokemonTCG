@@ -1,0 +1,72 @@
+# docker-compose.dev.yml
+version: '3.8'
+
+services:
+  pokemon-game:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+      - /workspaces/PokemonTCG:/workspace
+    command: sleep infinity
+    environment:
+      - PYTHONPATH=/workspace/backend
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=http://langfuse:3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ENVIRONMENT=development
+      - POKEMON_DATABASE_URL=postgresql://pokemon:pokemon@postgres:5432/pokemon_tcg
+      - GAME_STATE_REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - langfuse
+      - redis
+      - postgres
+    networks:
+      - pokemon-net
+
+  langfuse:
+    image: langfuse/langfuse:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://langfuse:langfuse@postgres:5432/langfuse
+      - NEXTAUTH_SECRET=pokemon-ai-secret-key
+      - NEXTAUTH_URL=http://localhost:3000
+      - TELEMETRY_ENABLED=false
+    depends_on:
+      - postgres
+    networks:
+      - pokemon-net
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=langfuse,pokemon_tcg
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pokemon123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh
+    networks:
+      - pokemon-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - pokemon-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  pokemon-net:
+    driver: bridge
