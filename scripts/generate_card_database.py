@@ -13,7 +13,7 @@ Features:
 import os
 import json
 import requests
-from tcgdexsdk import TCGdx
+from tcgdexsdk import TCGdex
 from typing import List, Dict, Optional, Set
 import argparse
 from pathlib import Path
@@ -31,8 +31,8 @@ class CardDatabaseGenerator:
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize TCGdx
-        self.tcgdx = TCGdx("en")
+        # Initialize TCGdex
+        self.tcgdx = TCGdex("en")
         
         # Define game-relevant fields only
         self.relevant_fields = {
