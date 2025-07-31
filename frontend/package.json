@@ -10,11 +10,12 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "lucide-react": "^0.263.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "lucide-react": "^0.263.1"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/node": "^24.1.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -30,7 +31,15 @@
     "undici-types": "^5.26.5",
     "vite": "^4.4.5"
   },
-  "keywords": ["pokemon", "tcg", "ai", "education", "llm", "typescript", "react"],
+  "keywords": [
+    "pokemon",
+    "tcg",
+    "ai",
+    "education",
+    "llm",
+    "typescript",
+    "react"
+  ],
   "author": "Pokemon TCG LLM Education Team",
   "license": "MIT"
 }
