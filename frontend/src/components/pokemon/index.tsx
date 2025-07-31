@@ -93,12 +93,12 @@ export const PokemonCardDisplay: React.FC<{
           </div>
         )}
         
-        {/* Active Pokemon indicator */}
+        {/* Active Pokemon indicator
         {isActive && (
           <div className="text-xs font-bold text-yellow-700 bg-yellow-200 rounded px-2 py-1">
             ACTIVE
           </div>
-        )}
+        )} */}
       </div>
     </Card>
   );
