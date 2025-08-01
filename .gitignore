@@ -27,6 +27,7 @@ assets/cards/images/*/*.png
 # Build outputs
 frontend/dist/
 backend/build/
+frontend/package-lock.json
 
 # Database
 *.db

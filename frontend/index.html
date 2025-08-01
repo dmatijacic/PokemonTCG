@@ -1,10 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Pokemon TCG LLM Education</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokemon TCG AI Education Platform</title>
+    <meta name="description" content="Learn AI concepts through Pokemon TCG gameplay with intelligent AI opponents" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom styles -->
+    <style>
+      /* Pokemon-themed gradients */
+      .pokemon-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      
+      .fire-gradient {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+      }
+      
+      .water-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+      }
+      
+      .grass-gradient {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      }
+      
+      .electric-gradient {
+        background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%);
+      }
+      
+      /* AI thinking animation */
+      .ai-thinking {
+        animation: pulse 2s infinite;
+      }
+      
+      /* Pokemon card hover effects */
+      .pokemon-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+      
+      /* Battle log scroll styling */
+      .battle-log {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
+      }
+      
+      .battle-log::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      .battle-log::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+      }
+      
+      .battle-log::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 3px;
+      }
+      
+      /* Loading spinner for AI thinking */
+      .spinner {
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #3498db;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
-  <body>
-    <div id="app"></div>
+  <body class="bg-gradient-to-br from-blue-100 via-purple-50 to-green-100 min-h-screen">
+    <!-- Loading screen -->
+    <div id="loading" class="fixed inset-0 bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center z-50">
+      <div class="text-center text-white">
+        <div class="text-6xl mb-4">🎮</div>
+        <h1 class="text-2xl font-bold mb-2">Pokemon TCG AI Education</h1>
+        <p class="text-blue-200 mb-4">Loading AI opponents and Pokemon cards...</p>
+        <div class="spinner mx-auto"></div>
+      </div>
+    </div>
+    
+    <!-- Main app container -->
+    <div id="app" class="hidden">
+      <!-- Pokemon game will be rendered here by React -->
+    </div>
+    
+    <!-- Loading script -->
+    <script>
+      // Simulate loading and hide loading screen
+      setTimeout(() => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('app').classList.remove('hidden');
+      }, 2000);
+      
+      // Log game initialization
+      console.log('🎮 Pokemon TCG AI Education Platform initializing...');
+      console.log('⚡ Teaching AI concepts through Pokemon battles!');
+    </script>
+    
+    <!-- Main application script -->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
