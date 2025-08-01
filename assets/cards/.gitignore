@@ -1,0 +1,10 @@
+# First, ignore everything
+*
+
+# Then, make exceptions for specific files/folders you want to track
+!.gitignore
+# Add your exceptions below with !
+# For example:
+# !important.txt
+# !images/
+# !*.png
