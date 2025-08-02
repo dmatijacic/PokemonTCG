@@ -17,6 +17,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
     
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -27,7 +30,15 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*", "index.html"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "src/**/*", 
+    "index.html"
+  ],
+  "exclude": [
+    "node_modules", 
+    "dist"
+  ],
+  "references": [
+    { "path": "./tsconfig.node.json" }
+  ]
 }
